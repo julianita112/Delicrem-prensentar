@@ -114,18 +114,45 @@ export function Proveedores() {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
     });
-
+  
     if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:3000/api/proveedores/${proveedor.id_proveedor}`);
         fetchProveedores(); // Refrescar la lista de proveedores
-        Swal.fire('¡Eliminado!', 'El proveedor ha sido eliminado.', 'success');
+        Swal.fire({
+          icon: 'success',
+          title: '¡Eliminado!',
+          text: 'El proveedor ha sido eliminado.',
+          confirmButtonText: 'Aceptar',
+          background: '#ffff',
+          iconColor: '#28a745',
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: 'text-lg font-semibold',
+            icon: 'text-2xl',
+            confirmButton: 'px-4 py-2 text-white'
+          }
+        });
       } catch (error) {
         console.error("Error deleting proveedor:", error);
-        Swal.fire('Error', 'El proveedor no se puede eliminar ya que se encuentra asociado a una compra.', 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: 'No se puede eliminar el proveedor ya que se encuentra asociado a una compra.',
+          confirmButtonText: 'Aceptar',
+          background: '#ffff',
+          iconColor: '#A62A64',
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: 'text-lg font-semibold',
+            icon: 'text-2xl',
+            confirmButton: 'px-4 py-2 text-white'
+          }
+        });
       }
     }
   };
+  
 
   const handleSave = async () => {
 
@@ -136,13 +163,13 @@ export function Proveedores() {
           await axios.put(`http://localhost:3000/api/proveedores/${selectedProveedor.id_proveedor}`, selectedProveedor);
           Toast.fire({
             icon: 'success',
-            title: 'Proveedor actualizado exitosamente'
+            title: 'Proveedor actualizado exitosamente.'
           });
         } else {
           await axios.post("http://localhost:3000/api/proveedores", selectedProveedor);
           Toast.fire({
             icon: 'success',
-            title: 'Proveedor creado exitosamente'
+            title: 'Proveedor creado exitosamente.'
           });
         }
         fetchProveedores(); // Refrescar la lista de proveedores

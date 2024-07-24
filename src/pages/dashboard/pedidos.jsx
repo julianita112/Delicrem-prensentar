@@ -248,9 +248,18 @@ export function Pedidos() {
       } catch (error) {
         console.error("Error deleting pedido:", error);
         Swal.fire({
-          title: 'Error',
-          text: error.response?.data?.error || 'Hubo un problema al eliminar el pedido.',
           icon: 'error',
+          title: 'Error al eliminar',
+          text: error.response?.data?.error || 'Hubo un problema al eliminar el pedido.',
+          confirmButtonText: 'Aceptar',
+          background: '#ffff',
+          iconColor: '#A62A64',
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: 'text-lg font-semibold',
+            icon: 'text-2xl',
+            confirmButton: 'px-4 py-2 text-white'
+          },
           showClass: {
             popup: 'animate__animated animate__fadeInDown'
           },
@@ -261,6 +270,7 @@ export function Pedidos() {
       }
     }
   };
+  
   
 
   const handleChange = async (e) => {
@@ -433,7 +443,7 @@ export function Pedidos() {
   <DialogHeader className="text-black p-2 text-lg">
     {editMode ? "Editar Pedido" : "Crear Pedido"}
   </DialogHeader>
-  <DialogBody divider className="p-4 flex">
+  <DialogBody divider className="p-1 flex">
     {/* Contenedor para la parte izquierda que tendrá barra de desplazamiento */}
     <div className="flex-1 bg-gray-100 p-4 rounded-lg shadow-md flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
       <div className="flex flex-col gap-2">
@@ -458,6 +468,7 @@ export function Pedidos() {
             label="Número de Pedido"
             name="numero_pedido"
             type="text"
+            required
             value={selectedPedido.numero_pedido}
             onChange={handleChange}
             className="w-full text-xs"
@@ -468,6 +479,7 @@ export function Pedidos() {
             label="Fecha de Entrega"
             name="fecha_entrega"
             type="date"
+
             value={selectedPedido.fecha_entrega.split('T')[0]}
             onChange={handleChange}
             className="w-full text-xs"
@@ -479,6 +491,7 @@ export function Pedidos() {
             label="Fecha de Pago"
             name="fecha_pago"
             type="date"
+            
             value={selectedPedido.fecha_pago ? selectedPedido.fecha_pago.split('T')[0] : ""}
             onChange={handleChange}
             className="w-full text-xs"
@@ -489,10 +502,11 @@ export function Pedidos() {
           <Input
             label="Estado"
             name="estado"
+            required
             value={selectedPedido.estado}
             onChange={handleChange}
             className="w-full text-xs"
-            required
+            
           />
         </div>
         <div className="flex items-center gap-1 text-xs">
@@ -517,6 +531,7 @@ export function Pedidos() {
             <div className="flex flex-col gap-2">
               <Select
                 label="Producto"
+                required
                 name="id_producto"
                 value={detalle.id_producto}
                 onChange={(e) => handleDetalleChange(index, 'id_producto', e)}
@@ -532,6 +547,7 @@ export function Pedidos() {
                 label="Cantidad"
                 name="cantidad"
                 type="number"
+                required
                 value={detalle.cantidad}
                 onChange={(e) => handleDetalleChange(index, 'cantidad', e.target.value)}
                 className="w-full text-xs max-w-xs"
@@ -552,7 +568,7 @@ export function Pedidos() {
         <div className="mt-2 flex justify-end">
           <Button className="btnmas" size="sm" onClick={handleAddDetalle}>
             <PlusIcon className="h-4 w-4 mr-1" />
-            Agregar
+            
           </Button>
         </div>
       </div>

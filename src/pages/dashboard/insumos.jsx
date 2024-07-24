@@ -105,7 +105,7 @@ export function Insumos() {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
     });
-
+  
     if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:3000/api/insumos/${insumo.id_insumo}`);
@@ -127,10 +127,24 @@ export function Insumos() {
         });
       } catch (error) {
         console.error("Error deleting insumo:", error);
-        Swal.fire('Error', 'Hubo un problema al eliminar el insumo.', 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: 'El insumo no se puede eliminar ya que se encuentra asociado a una categoría de insumo y/o a una ficha técnica.',
+          confirmButtonText: 'Aceptar',
+          background: '#ffff',
+          iconColor: '#A62A64',
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: 'text-lg font-semibold',
+            icon: 'text-2xl',
+            confirmButton: 'px-4 py-2 text-white'
+          }
+        });
       }
     }
   };
+  
 
   const handleSave = async () => {
     try {

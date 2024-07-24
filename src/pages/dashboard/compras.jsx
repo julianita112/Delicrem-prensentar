@@ -352,25 +352,27 @@ import {
                 {errors.fecha_compra && <p className="text-red-500 text-xs mt-1">{errors.fecha_compra}</p>}
               </div>
               <div className="w-[300px]">
-                <Select
-                  label="Estado"
-                  name="estado"
-                  required
-                  value={selectedCompra.estado}
-                  onChange={(e) => {
-                    setSelectedCompra({ ...selectedCompra, estado: e });
-                    setErrors({ ...errors, estado: "" });
-                  }}
-                  className="w-full text-sm"
-                >
-                  <Option value="pendiente">Pendiente</Option>
-                  <Option value="en preparación">En preparación</Option>
-                  <Option value="completado">Completado</Option>
-                </Select>
-                {errors.estado && (
-                  <p className="text-red-500 text-xs mt-1">{errors.estado}</p>
-                )}
-              </div>
+              <Select
+  label="Estado"
+  name="estado"
+  required
+  value={selectedCompra.estado}
+  onChange={(e) => {
+    setSelectedCompra({ ...selectedCompra, estado: e.target.value });
+    setErrors({ ...errors, estado: "" });
+  }}
+  className={`w-full text-sm ${errors.estado ? 'border-red-500' : ''}`}
+>
+  <Option value="pendiente">Pendiente</Option>
+  <Option value="en preparación">En preparación</Option>
+  <Option value="completado">Completado</Option>
+</Select>
+{errors.estado && <p className="text-red-500 text-xs mt-1">{errors.estado}</p>}
+
+  <p className="text-red-500 text-xs mt-1">{errors.estado}</p>
+</div>
+
+
               <Typography variant="h6" color="blue-gray" className="mt-1">
                 Insumos a comprar
               </Typography>

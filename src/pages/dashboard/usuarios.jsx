@@ -345,6 +345,7 @@ export function Usuarios() {
       <Select
         label="Rol"
         name="id_rol"
+        
         value={String(selectedUser.id_rol)}
         onChange={(value) => setSelectedUser({ ...selectedUser, id_rol: value })}
         required

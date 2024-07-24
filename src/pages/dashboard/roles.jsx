@@ -308,6 +308,7 @@ export function Roles() {
             name="nombre"
             value={selectedRole.nombre}
             onChange={handleChange}
+            error={errors.nombre}
             className={`mb-2 ${errors.nombre ? 'border-red-800' : ''}`}
             required
           />

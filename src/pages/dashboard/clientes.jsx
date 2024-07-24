@@ -103,24 +103,46 @@ export function Clientes() {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar'
     });
-
+  
     if (result.isConfirmed) {
       try {
         await axios.delete(`http://localhost:3000/api/clientes/${id}`);
         fetchClientes();
+        const Toast = Swal.mixin({
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+          }
+        });
         Toast.fire({
           icon: 'success',
           title: '¡Eliminado! El cliente ha sido eliminado.'
         });
       } catch (error) {
         console.error("Error deleting cliente:", error);
-        Toast.fire({
+        Swal.fire({
           icon: 'error',
-          title: 'Error al eliminar cliente. Por favor, inténtalo de nuevo.'
+          title: 'Error al eliminar',
+          text: 'El cliente no se puede eliminar porque se encuentra asociado a una venta o pedido.',
+          confirmButtonText: 'Aceptar',
+          background: '#ffff',
+          iconColor: '#A62A64',
+          confirmButtonColor: '#000000',
+          customClass: {
+            title: 'text-lg font-semibold',
+            icon: 'text-2xl',
+            confirmButton: 'px-4 py-2 text-white'
+          }
         });
       }
     }
   };
+  
 
   const handleSave = async () => {
     if (!validateFields(selectedCliente)) {
