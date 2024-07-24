@@ -39,6 +39,7 @@ export function Ventas() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchVentas();
@@ -117,12 +118,43 @@ export function Ventas() {
       detalleVentas: [],
       cliente: { nombre: "", contacto: "" },
     });
+    setErrors({});
     handleOpen();
   };
 
   const handleSave = async () => {
-    if (!selectedVenta.id_cliente || !selectedVenta.fecha_venta || selectedVenta.detalleVentas.length === 0) {
-      Swal.fire("Error", "Por favor, complete todos los campos requeridos.", "error");
+    const newErrors = {};
+
+
+    if (!selectedVenta.numero_pedido) {
+      newErrors.numero_pedido = "El número de pedido es obligatorio";
+    }
+    if (!selectedVenta.id_cliente) {
+      newErrors.id_cliente = "El cliente es obligatorio ";
+    }
+    if (!selectedVenta.fecha_venta) {
+      newErrors.fecha_venta = "La fecha de venta es obligatoria";
+    }
+    if (!selectedVenta.estado) {
+      newErrors.estado = "El estado es obligatorio";
+    }
+    if (selectedVenta.detalleVentas.length === 0) {
+      newErrors.detalleVentas = "Debe agregar al menos un detalle de venta";
+    }
+    selectedVenta.detalleVentas.forEach((detalle, index) => {
+      if (!detalle.id_producto) {
+        newErrors[`producto_${index}`] = "El producto es obligatorio";
+      }
+      if (!detalle.cantidad) {
+        newErrors[`cantidad_${index}`] = "La cantidad es obligatoria";
+      }
+      if (!detalle.precio_unitario) {
+        newErrors[`precio_${index}`] = "El precio unitario es obligatorio";
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -141,18 +173,27 @@ export function Ventas() {
 
     try {
       await axios.post("http://localhost:3000/api/ventas", ventaToSave);
-      Swal.fire("¡Creación exitosa!", "La venta ha sido creada correctamente.", "success");
+      Swal.fire({
+        icon: "success",
+        title: "¡Creación exitosa!",
+        text: "La venta ha sido creada correctamente.",
+      });
       fetchVentas();
       handleOpen();
     } catch (error) {
       console.error("Error saving venta:", error);
-      Swal.fire("Error", "Hubo un problema al guardar la venta.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Hubo un problema al guardar la venta.",
+      });
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSelectedVenta({ ...selectedVenta, [name]: value });
+    setErrors({ ...errors, [name]: "" });
   };
 
   const handleDetalleChange = (index, e) => {
@@ -160,6 +201,7 @@ export function Ventas() {
     const detalles = [...selectedVenta.detalleVentas];
     detalles[index][name] = value;
     setSelectedVenta({ ...selectedVenta, detalleVentas: detalles });
+    setErrors({ ...errors, [`${name}_${index}`]: "" });
   };
 
   const handleAddDetalle = () => {
@@ -191,15 +233,19 @@ export function Ventas() {
 
   const handleUpdateState = async (id_venta) => {
     const { value: estado } = await Swal.fire({
-      title: "Actualizar Estado",
-      input: "select",
+      title: 'Actualizar Estado',
+      input: 'select',
       inputOptions: {
-        pendiente: "Pendiente",
-        "en preparación": "En preparación",
-        completado: "Completado",
+        pendiente: 'Pendiente',
+        'en preparación': 'En preparación',
+        completado: 'Completado',
       },
-      inputPlaceholder: "Selecciona el estado",
+      inputPlaceholder: 'Selecciona el estado',
       showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Actualizar',
+      cancelButtonText: 'Cancelar',
     });
 
     if (estado) {
@@ -253,27 +299,27 @@ export function Ventas() {
             Crear Venta
           </Button>
           <div className="mb-6">
-  <Input
-    type="text"
-    placeholder="Buscar por cliente"
-    value={search}
-    onChange={handleSearchChange}
-  />
-  <div className="mt-4 flex gap-4">
-    <Input
-      type="date"
-      label="Fecha Inicio"
-      value={startDate}
-      onChange={(e) => setStartDate(e.target.value)}
-    />
-    <Input
-      type="date"
-      label="Fecha Fin"
-      value={endDate}
-      onChange={(e) => setEndDate(e.target.value)}
-    />
-  </div>
-</div>
+            <Input
+              type="text"
+              placeholder="Buscar por cliente"
+              value={search}
+              onChange={handleSearchChange}
+            />
+            <div className="mt-4 flex gap-4">
+              <Input
+                type="date"
+                label="Fecha Inicio"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <Input
+                type="date"
+                label="Fecha Fin"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div>
 
           <div className="mb-1">
             <Typography variant="h6" color="blue-gray" className="mb-4">
@@ -320,14 +366,19 @@ export function Ventas() {
 
       <Dialog open={open} handler={handleOpen} className="custom-modal max-w-4xl">
   <DialogHeader className="text-black p-2 text-lg">Crear Venta</DialogHeader>
-  <DialogBody divider className="overflow-auto max-h-[60vh] p-4 flex gap-6">
-    <div className="flex-1 flex flex-col gap-4">
+  <DialogBody divider className="flex max-h-[60vh] p-4 gap-6">
+    <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
+      {/* Campos de Selección y Entrada */}
       <div className="w-full max-w-xs">
         <Select
           label="Número de Pedido"
           name="numero_pedido"
+          required
           value={selectedVenta.numero_pedido}
-          onChange={(e) => handlePedidoChange(e)}
+          onChange={(e) => {
+            handlePedidoChange(e);
+            setErrors({ ...errors, numero_pedido: "" });
+          }}
           className="w-full text-sm"
         >
           {pedidos.map((pedido) => (
@@ -336,13 +387,20 @@ export function Ventas() {
             </Option>
           ))}
         </Select>
+        {errors.numero_pedido && (
+          <p className="text-red-500 text-xs mt-1">{errors.numero_pedido}</p>
+        )}
       </div>
       <div className="w-full max-w-xs">
         <Select
           label="Cliente"
           name="id_cliente"
+          required
           value={selectedVenta.id_cliente}
-          onChange={(e) => setSelectedVenta({ ...selectedVenta, id_cliente: e })}
+          onChange={(e) => {
+            setSelectedVenta({ ...selectedVenta, id_cliente: e });
+            setErrors({ ...errors, id_cliente: "" });
+          }}
           className="w-full text-sm"
         >
           {clientes.map((cliente) => (
@@ -351,29 +409,46 @@ export function Ventas() {
             </Option>
           ))}
         </Select>
+        {errors.id_cliente && (
+          <p className="text-red-500 text-xs mt-1">{errors.id_cliente}</p>
+        )}
       </div>
       <div className="w-full max-w-xs">
         <Input
           label="Fecha de Venta"
           name="fecha_venta"
           type="date"
+          required
           value={selectedVenta.fecha_venta}
-          onChange={handleChange}
+          onChange={(e) => {
+            handleChange(e);
+            setErrors({ ...errors, fecha_venta: "" });
+          }}
           className="w-full text-sm"
         />
+        {errors.fecha_venta && (
+          <p className="text-red-500 text-xs mt-1">{errors.fecha_venta}</p>
+        )}
       </div>
       <div className="w-full max-w-xs">
         <Select
           label="Estado"
           name="estado"
+          required
           value={selectedVenta.estado}
-          onChange={(e) => setSelectedVenta({ ...selectedVenta, estado: e })}
+          onChange={(e) => {
+            setSelectedVenta({ ...selectedVenta, estado: e });
+            setErrors({ ...errors, estado: "" });
+          }}
           className="w-full text-sm"
         >
           <Option value="pendiente">Pendiente</Option>
           <Option value="en preparación">En preparación</Option>
           <Option value="completado">Completado</Option>
         </Select>
+        {errors.estado && (
+          <p className="text-red-500 text-xs mt-1">{errors.estado}</p>
+        )}
       </div>
       <div className="flex items-center gap-1 text-xs mt--1">
         <Typography className="text-gray-700">Pagado:</Typography>
@@ -388,56 +463,76 @@ export function Ventas() {
       <Typography variant="h6" color="blue-gray" className="mt--1 text-sm">
         Detalles de la Venta
       </Typography>
-      <div className="bg-gray-100 p-4 rounded-xs shadow-md flex-1 overflow-y-auto mt-2 mb-4 h-[calc(100% - 2rem)]">
-  {selectedVenta.detalleVentas.map((detalle, index) => (
-    <div key={index} className="mb-4">
-      <div className="flex flex-col gap-3 mb-2">
-        <div className="w-full max-w-xs">
-          <Select
-            label="Producto"
-            name="id_producto"
-            value={detalle.id_producto}
-            onChange={(e) => handleDetalleChange(index, { target: { name: 'id_producto', value: e } })}
-            className="w-full text-sm"
-          >
-            {productos.map((producto) => (
-              <Option key={producto.id_producto} value={producto.id_producto}>
-                {producto.nombre}
-              </Option>
-            ))}
-          </Select>
-        </div>
-        <div className="w-full max-w-xs">
-          <Input
-            label="Cantidad"
-            name="cantidad"
-            type="number"
-            value={detalle.cantidad}
-            onChange={(e) => handleDetalleChange(index, e)}
-            className="w-full text-sm"
-          />
-        </div>
-        <div className="w-full max-w-xs">
-          <Input
-            label="Precio Unitario"
-            name="precio_unitario"
-            type="number"
-            step="0.01"
-            value={detalle.precio_unitario}
-            onChange={(e) => handleDetalleChange(index, e)}
-            className="w-full text-sm"
-          />
-        </div>
-      </div>
-  
-            <div className="flex justify-end">
+      <div className="bg-gray-100 p-4 rounded-xs shadow-md flex-1 mt-2 mb-4">
+        {selectedVenta.detalleVentas.map((detalle, index) => (
+          <div key={index} className="mb-4 flex items-center">
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="w-full max-w-xs">
+                <Select
+                  label="Producto"
+                  name="id_producto"
+                  required
+                  value={detalle.id_producto}
+                  onChange={(e) => {
+                    handleDetalleChange(index, { target: { name: 'id_producto', value: e } });
+                    setErrors({ ...errors, [`producto_${index}`]: "" });
+                  }}
+                  className="w-full text-sm"
+                >
+                  {productos.map((producto) => (
+                    <Option key={producto.id_producto} value={producto.id_producto}>
+                      {producto.nombre}
+                    </Option>
+                  ))}
+                </Select>
+                {errors[`producto_${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[`producto_${index}`]}</p>
+                )}
+              </div>
+              <div className="w-full max-w-xs">
+                <Input
+                  label="Cantidad"
+                  name="cantidad"
+                  type="number"
+                  required
+                  value={detalle.cantidad}
+                  onChange={(e) => {
+                    handleDetalleChange(index, e);
+                    setErrors({ ...errors, [`cantidad_${index}`]: "" });
+                  }}
+                  className="w-full text-sm"
+                />
+                {errors[`cantidad_${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[`cantidad_${index}`]}</p>
+                )}
+              </div>
+              <div className="w-full max-w-xs">
+                <Input
+                  label="Precio Unitario"
+                  name="precio_unitario"
+                  type="number"
+                  step="0.01"
+                  required
+                  value={detalle.precio_unitario}
+                  onChange={(e) => {
+                    handleDetalleChange(index, e);
+                    setErrors({ ...errors, [`precio_${index}`]: "" });
+                  }}
+                  className="w-full text-sm"
+                />
+                {errors[`precio_${index}`] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[`precio_${index}`]}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center ml-2">
               <IconButton
                 color="red"
                 onClick={() => handleRemoveDetalle(index)}
                 className="btncancelarm"
                 size="sm"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-5 w-5" />
               </IconButton>
             </div>
           </div>
@@ -445,12 +540,12 @@ export function Ventas() {
         <div className="mt-2 flex justify-end">
           <Button className="btnmas" size="sm" onClick={handleAddDetalle}>
             <PlusIcon className="h-4 w-4 mr-1" />
-            Agregar
           </Button>
         </div>
       </div>
     </div>
-    <div className="w-full max-w-xs bg-gray-100 p-4 rounded-lg shadow-md max-h-[60vh] overflow-y-auto">
+
+    <div className="w-full max-w-xs bg-gray-100 p-4 rounded-lg shadow-md max-h-[60vh]">
       <Typography variant="h6" color="blue-gray" className="mb-4 text-lg">
         Detalles de la Venta
       </Typography>
@@ -479,106 +574,91 @@ export function Ventas() {
 
 
 
-      
-      <Dialog open={detailsOpen} handler={handleDetailsOpen}>
-        <DialogHeader>Detalles de la Venta</DialogHeader>
-        <DialogBody divider className="overflow-y-auto max-h-[60vh]">
+      <Dialog open={detailsOpen} handler={handleDetailsOpen} className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <DialogHeader className="text-lg font-semibold text-gray-800 border-b border-gray-300">
+          Detalles de la Venta
+        </DialogHeader>
+        <DialogBody divider className="overflow-y-auto max-h-[60vh] p-4">
           {selectedVenta.cliente && (
-            <div>
-              <Typography variant="h6" color="blue-gray">
+            <div className="mb-6">
+              <Typography variant="h6" color="blue-gray" className="font-semibold mb-2">
                 Información del Cliente
               </Typography>
-              <table className="min-w-full mt-2">
+              <table className="w-full text-sm border-collapse">
                 <tbody>
-                  <tr>
-                    <td className="font-semibold">ID Cliente:</td>
-                    <td>{selectedVenta.cliente.id_cliente}</td>
+                  <tr className="border-b">
+                    <td className="font-medium text-gray-700 py-2 px-4">ID Cliente:</td>
+                    <td className="py-2 px-4">{selectedVenta.cliente.id_cliente}</td>
                   </tr>
-                  <tr>
-                    <td className="font-semibold">Nombre:</td>
-                    <td>{selectedVenta.cliente.nombre}</td>
+                  <tr className="border-b">
+                    <td className="font-medium text-gray-700 py-2 px-4">Nombre:</td>
+                    <td className="py-2 px-4">{selectedVenta.cliente.nombre}</td>
                   </tr>
-                  <tr>
-                    <td className="font-semibold">Contacto:</td>
-                    <td>{selectedVenta.cliente.contacto}</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold">Creado:</td>
-                    <td>{selectedVenta.cliente.createdAt}</td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold">Actualizado:</td>
-                    <td>{selectedVenta.cliente.updatedAt}</td>
+                  <tr className="border-b">
+                    <td className="font-medium text-gray-700 py-2 px-4">Contacto:</td>
+                    <td className="py-2 px-4">{selectedVenta.cliente.contacto}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           )}
-          <div className="mt-4">
-            <Typography variant="h6" color="blue-gray">
+          <div className="mb-6">
+            <Typography variant="h6" color="blue-gray" className="font-semibold mb-2">
               Detalles de la Venta
             </Typography>
-            <table className="min-w-full mt-2">
+            <table className="w-full text-sm border-collapse">
               <tbody>
-                <tr>
-                  <td className="font-semibold">ID Venta:</td>
-                  <td>{selectedVenta.id_venta}</td>
+                <tr className="border-b">
+                  <td className="font-medium text-gray-700 py-2 px-4">ID Venta:</td>
+                  <td className="py-2 px-4">{selectedVenta.id_venta}</td>
                 </tr>
-                <tr>
-                  <td className="font-semibold">Número de Pedido:</td>
-                  <td>{selectedVenta.numero_pedido}</td>
+                <tr className="border-b">
+                  <td className="font-medium text-gray-700 py-2 px-4">Número de Pedido:</td>
+                  <td className="py-2 px-4">{selectedVenta.numero_pedido}</td>
                 </tr>
-                <tr>
-                  <td className="font-semibold">Fecha de Venta:</td>
-                  <td>{selectedVenta.fecha_venta.split('T')[0]}</td>
+                <tr className="border-b">
+                  <td className="font-medium text-gray-700 py-2 px-4">Fecha de Venta:</td>
+                  <td className="py-2 px-4">{selectedVenta.fecha_venta.split('T')[0]}</td>
                 </tr>
-                <tr>
-                  <td className="font-semibold">Estado:</td>
-                  <td>{selectedVenta.estado}</td>
+                <tr className="border-b">
+                  <td className="font-medium text-gray-700 py-2 px-4">Estado:</td>
+                  <td className="py-2 px-4">{selectedVenta.estado}</td>
                 </tr>
-                <tr>
-                  <td className="font-semibold">Pagado:</td>
-                  <td>{selectedVenta.pagado ? "Sí" : "No"}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">Creado:</td>
-                  <td>{new Date(selectedVenta.createdAt).toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="font-semibold">Actualizado:</td>
-                  <td>{new Date(selectedVenta.updatedAt).toLocaleString()}</td>
+                <tr className="border-b">
+                  <td className="font-medium text-gray-700 py-2 px-4">Pagado:</td>
+                  <td className="py-2 px-4">{selectedVenta.pagado ? "Sí" : "No"}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div className="mt-4 overflow-x-auto">
-            <Typography variant="h6" color="blue-gray">
+          <div className="mb-6 overflow-x-auto">
+            <Typography variant="h6" color="blue-gray" className="font-semibold mb-2">
               Detalles de Productos
             </Typography>
-            <table className="min-w-full mt-2">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr>
-                  <th className="font-semibold">ID Detalle</th>
-                  <th className="font-semibold">Producto</th>
-                  <th className="font-semibold">Cantidad</th>
-                  <th className="font-semibold">Precio Unitario</th>
+                <tr className="bg-gray-100 border-b">
+                  <th className="font-medium text-gray-700 py-2 px-4">ID Detalle</th>
+                  <th className="font-medium text-gray-700 py-2 px-4">Producto</th>
+                  <th className="font-medium text-gray-700 py-2 px-4">Cantidad</th>
+                  <th className="font-medium text-gray-700 py-2 px-4">Precio Unitario</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedVenta.detalleVentas.map((detalle) => (
-                  <tr key={detalle.id_detalle_venta}>
-                    <td>{detalle.id_detalle_venta}</td>
-                    <td>{productos.find(p => p.id_producto === detalle.id_producto)?.nombre || 'Producto no encontrado'}</td>
-                    <td>{detalle.cantidad}</td>
-                    <td>{detalle.precio_unitario}</td>
+                  <tr key={detalle.id_detalle_venta} className="border-b">
+                    <td className="py-2 px-4">{detalle.id_detalle_venta}</td>
+                    <td className="py-2 px-4">{productos.find(p => p.id_producto === detalle.id_producto)?.nombre || 'Producto no encontrado'}</td>
+                    <td className="py-2 px-4">{detalle.cantidad}</td>
+                    <td className="py-2 px-4">{detalle.precio_unitario}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </DialogBody>
-        <DialogFooter>
-          <Button variant="gradient" color="blue-gray" onClick={handleDetailsOpen}>
+        <DialogFooter className="p-4 border-t border-gray-300 flex justify-end">
+          <Button variant="gradient" className="btncancelarm" size="sm" onClick={handleDetailsOpen}>
             Cerrar
           </Button>
         </DialogFooter>

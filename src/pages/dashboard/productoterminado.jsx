@@ -17,11 +17,23 @@ import { useState, useEffect } from "react";
 import axios from "../../utils/axiosConfig";
 import Swal from 'sweetalert2';
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: "top-end",
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.onmouseenter = Swal.stopTimer;
+    toast.onmouseleave = Swal.resumeTimer;
+  }
+});
+
 export function ProductoTerminado() {
   const [productos, setProductos] = useState([]);
   const [filteredProductos, setFilteredProductos] = useState([]);
   const [open, setOpen] = useState(false);
-  const [productionOpen, setProductionOpen] = useState(false); // Nuevo estado para producción
+  const [productionOpen, setProductionOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedProducto, setSelectedProducto] = useState({
@@ -29,7 +41,7 @@ export function ProductoTerminado() {
     descripcion: "",
     precio: "",
   });
-  const [productionDetails, setProductionDetails] = useState([]); // Nuevo estado para detalles de producción
+  const [productionDetails, setProductionDetails] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [productosPerPage] = useState(3);
   const [search, setSearch] = useState("");
@@ -60,7 +72,7 @@ export function ProductoTerminado() {
   };
 
   const handleOpen = () => setOpen(!open);
-  const handleProductionOpen = () => setProductionOpen(!productionOpen); // Nueva función para abrir producción
+  const handleProductionOpen = () => setProductionOpen(!productionOpen);
   const handleDetailsOpen = () => setDetailsOpen(!detailsOpen);
 
   const handleEdit = (producto) => {
@@ -80,7 +92,7 @@ export function ProductoTerminado() {
   };
 
   const handleProductionCreate = () => {
-    setProductionDetails([{ id_producto: "", cantidad: "" }]); // Inicializar con un producto
+    setProductionDetails([{ id_producto: "", cantidad: "" }]);
     handleProductionOpen();
   };
 
@@ -100,10 +112,16 @@ export function ProductoTerminado() {
       try {
         await axios.delete(`http://localhost:3000/api/productos/${producto.id_producto}`);
         fetchProductos(); // Refrescar la lista de productos
-        Swal.fire('¡Eliminado!', 'El producto ha sido eliminado.', 'success');
+        Toast.fire({
+          icon: 'success',
+          title: 'El producto ha sido eliminado correctamente.'
+        });
       } catch (error) {
         console.error("Error deleting producto:", error);
-        Swal.fire('Error', 'Hubo un problema al eliminar el producto.', 'error');
+        Toast.fire({
+          icon: 'error',
+          title: 'Hubo un problema al eliminar el producto.'
+        });
       }
     }
   };
@@ -116,35 +134,49 @@ export function ProductoTerminado() {
     try {
       if (editMode) {
         await axios.put(`http://localhost:3000/api/productos/${selectedProducto.id_producto}`, productoToSave);
-        Swal.fire('¡Actualización exitosa!', 'El producto ha sido actualizado correctamente.', 'success');
+        Toast.fire({
+          icon: 'success',
+          title: 'El producto ha sido actualizado correctamente.'
+        });
       } else {
         await axios.post("http://localhost:3000/api/productos", productoToSave);
-        Swal.fire('¡Creación exitosa!', 'El producto ha sido creado correctamente.', 'success');
+        Toast.fire({
+          icon: 'success',
+          title: 'El producto ha sido creado correctamente.'
+        });
       }
       fetchProductos(); // Refrescar la lista de productos
       handleOpen();
     } catch (error) {
       console.error("Error saving producto:", error);
-      Swal.fire('Error', 'Hubo un problema al guardar el producto.', 'error');
+      Toast.fire({
+        icon: 'error',
+        title: 'Hubo un problema al guardar el producto.'
+      });
     }
   };
 
   const handleProductionSave = async () => {
     try {
-        const productionDetailsNumerics = productionDetails.map(detalle => ({
-            ...detalle,
-            cantidad: Number(detalle.cantidad) // Convertir cantidad a número
-        }));
-        await axios.post("http://localhost:3000/api/productos/producir", { productosProduccion: productionDetailsNumerics });
-        Swal.fire('¡Producción exitosa!', 'La producción ha sido realizada correctamente.', 'success');
-        fetchProductos(); // Refrescar la lista de productos
-        handleProductionOpen();
+      const productionDetailsNumerics = productionDetails.map(detalle => ({
+        ...detalle,
+        cantidad: Number(detalle.cantidad)
+      }));
+      await axios.post("http://localhost:3000/api/productos/producir", { productosProduccion: productionDetailsNumerics });
+      Toast.fire({
+        icon: 'success',
+        title: 'La producción ha sido realizada correctamente.'
+      });
+      fetchProductos(); // Refrescar la lista de productos
+      handleProductionOpen();
     } catch (error) {
-        console.error("Error saving producción:", error);
-        Swal.fire('Error', 'Hubo un problema al realizar la producción.', 'error');
+      console.error("Error saving producción:", error);
+      Toast.fire({
+        icon: 'error',
+        title: 'Hubo un problema al realizar la producción.'
+      });
     }
-};
-
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -154,10 +186,9 @@ export function ProductoTerminado() {
   const handleProductionChange = (index, e) => {
     const { name, value } = e.target;
     const detalles = [...productionDetails];
-    detalles[index][name] = name === 'cantidad' ? Number(value) : value; // Convertir cantidad a número
+    detalles[index][name] = name === 'cantidad' ? Number(value) : value;
     setProductionDetails(detalles);
-};
-
+  };
 
   const handleAddProductionDetalle = () => {
     setProductionDetails([...productionDetails, { id_producto: "", cantidad: "" }]);
@@ -272,56 +303,54 @@ export function ProductoTerminado() {
           </div>
         </CardBody>
       </Card>
-      <Dialog open={open} handler={handleOpen} className="custom-modal">
-        <DialogHeader>{editMode ? "Editar Producto" : "Crear Producto"}</DialogHeader>
-        <DialogBody className="custom-modal-body">
-        <div className="flex flex-col space-y-4">
-          <Input
-            label="Nombre"
-            name="nombre"
-            value={selectedProducto.nombre}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            label="Descripción"
-            name="descripcion"
-            value={selectedProducto.descripcion}
-            onChange={handleChange}
-            required
-          />
-          <Input
-            label="Precio"
-            name="precio"
-            type="number"
-            value={selectedProducto.precio}
-            onChange={handleChange}
-            required
-          />
-           </div>
+      
+      {/* Dialog for Create/Edit Producto */}
+      <Dialog open={open} handler={handleOpen} size="lg">
+        <DialogHeader>{editMode ? "Editar Producto Terminado" : "Crear Producto Terminado"}</DialogHeader>
+        <DialogBody>
+          <div className="grid grid-cols-1 gap-4 mb-4">
+            <Input
+              name="nombre"
+              label="Nombre"
+              value={selectedProducto.nombre}
+              onChange={handleChange}
+            />
+            <Input
+              name="descripcion"
+              label="Descripción"
+              value={selectedProducto.descripcion}
+              onChange={handleChange}
+            />
+            <Input
+              name="precio"
+              label="Precio"
+              type="number"
+              value={selectedProducto.precio}
+              onChange={handleChange}
+            />
+          </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="text" color="red" onClick={handleOpen}>
-            Cancelar
+          <Button variant="text" color="red" onClick={handleOpen} className="mr-1">
+            <span>Cancelar</span>
           </Button>
-          <Button variant="gradient" className="btnagregarm"  onClick={handleSave}>
-            {editMode ? "Guardar Cambios" : "Crear Producto"}
+          <Button variant="gradient" color="green" onClick={handleSave}>
+            <span>Guardar</span>
           </Button>
         </DialogFooter>
       </Dialog>
-      <Dialog open={productionOpen} handler={handleProductionOpen} className="custom-modal">
-        <DialogHeader>Producción</DialogHeader>
-        <DialogBody className="custom-modal-body">
-          <Typography variant="h6" color="blue-gray" className="mb-4">
-            Añadir Productos a Producción
-          </Typography>
+      
+      {/* Dialog for Production */}
+      <Dialog open={productionOpen} handler={handleProductionOpen} size="lg">
+        <DialogHeader>Crear Producción</DialogHeader>
+        <DialogBody>
           {productionDetails.map((detalle, index) => (
-            <div key={index} className="flex gap-4 mb-4 items-center">
+            <div key={index} className="grid grid-cols-3 gap-4 mb-4">
               <Select
                 label="Producto"
                 name="id_producto"
                 value={detalle.id_producto}
-                onChange={(e) => handleProductionChange(index, { target: { name: 'id_producto', value: e } })}
+                onChange={(e) => handleProductionChange(index, e)}
               >
                 {productos.map((producto) => (
                   <Option key={producto.id_producto} value={producto.id_producto}>
@@ -330,68 +359,53 @@ export function ProductoTerminado() {
                 ))}
               </Select>
               <Input
-                label="Cantidad"
                 name="cantidad"
+                label="Cantidad"
                 type="number"
                 value={detalle.cantidad}
                 onChange={(e) => handleProductionChange(index, e)}
               />
-              <IconButton color="red" onClick={() => handleRemoveProductionDetalle(index)} className="mt-6">
+              <IconButton color="red" size="sm" onClick={() => handleRemoveProductionDetalle(index)}>
                 <TrashIcon className="h-5 w-5" />
               </IconButton>
             </div>
           ))}
-          <Button color="blue" onClick={handleAddProductionDetalle}>
-            Añadir Producto
+          <Button onClick={handleAddProductionDetalle} className="btnagregar" size="sm" startIcon={<PlusIcon />}>
+            Añadir Detalle
           </Button>
         </DialogBody>
         <DialogFooter>
-          <Button variant="text" color="red" onClick={handleProductionOpen}>
-            Cancelar
+          <Button variant="text" color="red" onClick={handleProductionOpen} className="mr-1">
+            <span>Cancelar</span>
           </Button>
-          <Button variant="gradient" className="btnagregarm" onClick={handleProductionSave}>
-            Guardar Producción
+          <Button variant="gradient" color="green" onClick={handleProductionSave}>
+            <span>Guardar</span>
           </Button>
         </DialogFooter>
       </Dialog>
-      <Dialog open={detailsOpen} handler={handleDetailsOpen}>
+      {/* Dialog for View Details */}
+      <Dialog open={detailsOpen} handler={handleDetailsOpen} size="lg">
         <DialogHeader>Detalles del Producto</DialogHeader>
-        <DialogBody divider>
-          <table className="min-w-full">
-            <tbody>
-              <tr>
-                <td className="font-semibold">Nombre:</td>
-                <td>{selectedProducto.nombre}</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Descripción:</td>
-                <td>{selectedProducto.descripcion}</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Precio:</td>
-                <td>{selectedProducto.precio}</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Stock:</td>
-                <td>{selectedProducto.stock}</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Creado:</td>
-                <td>{selectedProducto.createdAt ? new Date(selectedProducto.createdAt).toLocaleString() : "N/A"}</td>
-              </tr>
-              <tr>
-                <td className="font-semibold">Actualizado:</td>
-                <td>{new Date(selectedProducto.updatedAt).toLocaleString()}</td>
-              </tr>
-            </tbody>
-          </table>
+        <DialogBody>
+          <div className="grid grid-cols-1 gap-4 mb-4">
+            <Typography variant="h6">Nombre</Typography>
+            <Typography>{selectedProducto.nombre}</Typography>
+            <Typography variant="h6">Descripción</Typography>
+            <Typography>{selectedProducto.descripcion}</Typography>
+            <Typography variant="h6">Precio</Typography>
+            <Typography>${selectedProducto.precio}</Typography>
+            <Typography variant="h6">Stock</Typography>
+            <Typography>{selectedProducto.stock}</Typography>
+          </div>
         </DialogBody>
         <DialogFooter>
-          <Button variant="gradient" color="blue-gray" onClick={handleDetailsOpen}>
-            Cerrar
+          <Button variant="text" color="blue-gray" onClick={handleDetailsOpen} className="mr-1">
+            <span>Cerrar</span>
           </Button>
         </DialogFooter>
       </Dialog>
     </>
   );
 }
+
+export default ProductoTerminado;

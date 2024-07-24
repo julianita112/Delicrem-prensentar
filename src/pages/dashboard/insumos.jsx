@@ -325,11 +325,11 @@ export function Insumos() {
       {errors.id_categoria && <Typography className="text-red-500 mt-1 text-sm">{errors.id_categoria}</Typography>}
     </div>
   </DialogBody>
-  <DialogFooter className="flex justify-end space-x-4 pt-4">
-    <Button variant="text" className="btncancelarinsumom rounded-lg" color="red" onClick={handleOpen}>
+  <DialogFooter className="flex justify-end pt-4">
+    <Button variant="text" className="btncancelarm" size="sm" onClick={handleOpen}>
       Cancelar
     </Button>
-    <Button variant="gradient" className="btnagregar rounded-lg" color="green" onClick={handleSave}>
+    <Button variant="gradient" className="btnagregarm" size="sm" color="green" onClick={handleSave}>
       {editMode ? "Guardar Cambios" : "Crear Insumo"}
     </Button>
   </DialogFooter>
